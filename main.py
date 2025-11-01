@@ -40,7 +40,7 @@ void main()
 {
     // Configuración de luz
     vec3 light_color = vec3(1.0, 1.0, 1.0);
-    float ambient_strength = 0.08;
+    float ambient_strength = 0.1;  // 🎯 Aumentado
     
     vec3 norm = normalize(frag_normal);
     vec3 light_dir = normalize(light_pos - frag_pos);
@@ -50,15 +50,15 @@ void main()
     vec3 ambient = ambient_strength * metal_color;
     
     float diff = max(dot(norm, light_dir), 0.0);
-    vec3 diffuse = diff * metal_color * 0.15;
-
-    // Especular
+    vec3 diffuse = diff * metal_color * 0.3;  // 🎯 Aumentado
+    
+    // Especular MÁS FUERTE para metal
     vec3 reflect_dir = reflect(-light_dir, norm);
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material_shininess);
     vec3 specular = material_specular_strength * spec * light_color;
 
-    // Color final
-    vec3 result = ambient + diffuse + specular;
+    // 🎯 MEZCLA MEJORADA - especular domina en metales
+    vec3 result = ambient + diffuse + specular * 2.0;  // 🎯 Specular amplificado
     final_color = vec4(result, 1.0);
 }
 '''
@@ -99,12 +99,21 @@ class ShaderObjects(PyOGApp):
         transformation = self.camera.transformation
         cam_pos = pygame.Vector3(transformation[0, 3], transformation[1, 3], transformation[2, 3])
         
-        # Pasar uniformes al shader
+        # 🎯 OBTENER UBICACIONES DE UNIFORMES (ANTES DE USARLOS)
         view_pos_loc = glGetUniformLocation(self.program_id, "view_pos")
         light_pos_loc = glGetUniformLocation(self.program_id, "light_pos")
+        metal_color_loc = glGetUniformLocation(self.program_id, "metal_color")  # ✅ AÑADIR ESTO
+        shininess_loc = glGetUniformLocation(self.program_id, "material_shininess")  # ✅ AÑADIR
+        specular_loc = glGetUniformLocation(self.program_id, "material_specular_strength")  # ✅ AÑADIR
         
+        # PASAR VALORES A UNIFORMES
         glUniform3f(view_pos_loc, cam_pos.x, cam_pos.y, cam_pos.z)
-        glUniform3f(light_pos_loc, 3.0, 5.0, 3.0)  # Luz arriba y al frente
+        glUniform3f(light_pos_loc, 3.0, 5.0, 3.0)
+        
+        # 🎨 CONFIGURAR METAL (PLATA)
+        glUniform3f(metal_color_loc, 0.8, 0.8, 0.9)  # Color plateado
+        glUniform1f(shininess_loc, 128.0)             # Brillo alto
+        glUniform1f(specular_loc, 1.5)                # Fuerza especular alta
         
         # Dibujar esfera metálica
         self.metal_sphere.draw()
